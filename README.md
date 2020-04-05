@@ -20,7 +20,7 @@ Raw Disk Manipulator (RDM) は、Linuxの [dd](https://linuxjm.osdn.jp/html/GNU_
 
 RDMは管理者権限で動作させる必要があるため、Delphiも管理者権限で動作させないとデバッガがアタッチできません。
 
-なお、RDMの開発にはDelphi 10.2 (Tokyo) Community Editionを使用しています。
+なお、RDMの開発にはDelphi 10.3 (Rio) Community Editionを使用しています。
 
 # ライセンス
 
