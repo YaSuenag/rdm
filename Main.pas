@@ -24,7 +24,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.StdCtrls,
   Data.Bind.EngExt, Vcl.Bind.DBEngExt, System.Rtti, System.Bindings.Outputs,
-  Vcl.Bind.Editors, Data.Bind.Components, System.UITypes, DriveInfo;
+  Vcl.Bind.Editors, Data.Bind.Components, System.UITypes, DriveInfo, DeviceDialog;
 
 type
 
@@ -42,9 +42,17 @@ type
     LinkControlToPropertyEnabled2: TLinkControlToProperty;
     Label3: TLabel;
     ProgressLabel: TLabel;
+    DeviceDialogButton: TButton;
+    OpenFileDialogButton: TButton;
+    OpenDialog1: TOpenDialog;
+    DeviceDialogButton2: TButton;
+    SaveFileDialogButton: TButton;
+    SaveDialog1: TSaveDialog;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure CopyThreadTerminated(Sender: TObject);
+    procedure DeviceDialogButtonClick(Sender: TObject);
+    procedure OpenFileDialogButtonClick(Sender: TObject);
   private
     procedure SetupParameter;
   public
@@ -173,6 +181,27 @@ begin
   CopyThread := nil;
 end;
 
+procedure TMainForm.DeviceDialogButtonClick(Sender: TObject);
+var Dlg: TDeviceSelector;
+begin
+  Dlg := TDeviceSelector.Create(Self);
+
+  try
+    Dlg.ShowModal;
+    if Sender = DeviceDialogButton then
+      begin
+        SrcEdit.Text := Dlg.DeviceName;
+      end
+    else
+      begin
+        DestEdit.Text := Dlg.DeviceName;
+      end;
+  finally
+    Dlg.Free;
+  end;
+
+end;
+
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
 
@@ -211,6 +240,24 @@ end;
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
   CopyThread := nil;
+end;
+
+procedure TMainForm.OpenFileDialogButtonClick(Sender: TObject);
+begin
+  if Sender = OpenFileDialogButton then
+    begin
+      if OpenDialog1.Execute then
+        begin
+          SrcEdit.Text := OpenDialog1.FileName;
+        end;
+    end
+  else
+    begin
+      if SaveDialog1.Execute then
+        begin
+          DestEdit.Text := SaveDialog1.FileName;
+        end;
+    end;
 end;
 
 procedure TMainForm.SetupParameter;

@@ -4,7 +4,7 @@ object MainForm: TMainForm
   BorderStyle = bsDialog
   Caption = 'RDM (Raw Disk Manipulator)'
   ClientHeight = 199
-  ClientWidth = 449
+  ClientWidth = 608
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -31,7 +31,7 @@ object MainForm: TMainForm
     Caption = #12467#12500#12540#20808
   end
   object Label3: TLabel
-    Left = 128
+    Left = 216
     Top = 105
     Width = 87
     Height = 13
@@ -40,19 +40,18 @@ object MainForm: TMainForm
   object ProgressBar1: TProgressBar
     Left = 8
     Top = 176
-    Width = 431
+    Width = 592
     Height = 17
     TabOrder = 6
     object ProgressLabel: TLabel
       Left = 0
       Top = 0
-      Width = 431
+      Width = 592
       Height = 17
       Align = alClient
       Alignment = taCenter
       Layout = tlCenter
-      ExplicitWidth = 3
-      ExplicitHeight = 13
+      ExplicitWidth = 433
     end
   end
   object SrcEdit: TEdit
@@ -70,7 +69,7 @@ object MainForm: TMainForm
     TabOrder = 1
   end
   object CopySizeCheck: TCheckBox
-    Left = 120
+    Left = 208
     Top = 73
     Width = 105
     Height = 17
@@ -78,7 +77,7 @@ object MainForm: TMainForm
     TabOrder = 2
   end
   object CopySizeEdit: TEdit
-    Left = 231
+    Left = 319
     Top = 71
     Width = 82
     Height = 21
@@ -89,7 +88,7 @@ object MainForm: TMainForm
     Text = '1024'
   end
   object BufferSizeEdit: TEdit
-    Left = 231
+    Left = 319
     Top = 102
     Width = 82
     Height = 21
@@ -99,13 +98,49 @@ object MainForm: TMainForm
     Text = '4'
   end
   object Button1: TButton
-    Left = 190
+    Left = 270
     Top = 145
     Width = 75
     Height = 25
     Caption = #12473#12479#12540#12488
     TabOrder = 5
     OnClick = Button1Click
+  end
+  object DeviceDialogButton: TButton
+    Left = 445
+    Top = 1
+    Width = 75
+    Height = 25
+    Caption = #12487#12496#12452#12473
+    TabOrder = 7
+    OnClick = DeviceDialogButtonClick
+  end
+  object OpenFileDialogButton: TButton
+    Left = 526
+    Top = 1
+    Width = 75
+    Height = 25
+    Caption = #12501#12449#12452#12523
+    TabOrder = 8
+    OnClick = OpenFileDialogButtonClick
+  end
+  object DeviceDialogButton2: TButton
+    Left = 445
+    Top = 30
+    Width = 75
+    Height = 25
+    Caption = #12487#12496#12452#12473
+    TabOrder = 9
+    OnClick = DeviceDialogButtonClick
+  end
+  object SaveFileDialogButton: TButton
+    Left = 525
+    Top = 30
+    Width = 75
+    Height = 25
+    Caption = #12501#12449#12452#12523
+    TabOrder = 10
+    OnClick = OpenFileDialogButtonClick
   end
   object BindingsList1: TBindingsList
     Methods = <>
@@ -119,5 +154,13 @@ object MainForm: TMainForm
       Component = CopySizeEdit
       ComponentProperty = 'Enabled'
     end
+  end
+  object OpenDialog1: TOpenDialog
+    Left = 464
+    Top = 88
+  end
+  object SaveDialog1: TSaveDialog
+    Left = 552
+    Top = 88
   end
 end
