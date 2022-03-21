@@ -24,12 +24,18 @@ uses Winapi.Windows, System.SysUtils;
 
 type
 
-  TDiskGeometry = packed record
+  TDiskGeometry = record
     Cylinders: Int64;
     MediaType: Integer;
     TracksPerCylinder: DWORD;
     SectorsPerTrack: DWORD;
     BytesPerSector: DWORD;
+  end;
+
+  TDiskGeometryEx = record
+    Geometry: TDiskGeometry;
+    DiskSize: LARGE_INTEGER;
+    Data: array[0..0] of BYTE;
   end;
 
   TGetLengthInformation = record
@@ -40,17 +46,6 @@ type
   function GetDriveSectorSize(DriveHandle: THandle): Integer;
 
 implementation
-
-function GetDiskGeometry(DriveHandle: THandle): TDiskGeometry;
-var Ret: Boolean;
-    BytesReturned: DWORD;
-begin
-  Ret := DeviceIoControl(DriveHandle, IOCTL_DISK_GET_DRIVE_GEOMETRY, nil, 0, @Result, SizeOf(TDiskGeometry), BytesReturned, nil);
-
-  if not Ret then
-    raise Exception.Create(SysErrorMessage(GetLastError));
-
-end;
 
 function GetDriveSize(DriveHandle: THandle): UInt64;
 var info: TGetLengthInformation;
@@ -65,10 +60,15 @@ begin
 end;
 
 function GetDriveSectorSize(DriveHandle: THandle): Integer;
-var DiskGeom: TDiskGeometry;
+var Ret: Boolean;
+    BytesReturned: DWORD;
+    Geom: TDiskGeometryEx;
 begin
-  DiskGeom := GetDiskGeometry(DriveHandle);
-  Result := DiskGeom.BytesPerSector;
+  Ret := DeviceIoControl(DriveHandle, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, nil, 0, @Geom, SizeOf(Geom), BytesReturned, nil);
+  if not Ret then
+    raise Exception.Create(SysErrorMessage(GetLastError));
+
+  Result := Geom.Geometry.BytesPerSector;
 end;
 
 end.
