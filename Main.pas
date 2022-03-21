@@ -1,5 +1,5 @@
 {
-  Copyright (C) 2018  Yasumasa Suenaga
+  Copyright (C) 2018, 2022, Yasumasa Suenaga
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -80,10 +80,11 @@ const MB = 1024 * 1024;
 
 procedure TCopyThread.Execute;
 var hSrc, hDest: THandle;
-    BufferSize, NumOfReadBytes, NumOfWriteBytes: DWORD;
-    Cnt, Max: Integer;
+    NumOfReadBytes, NumOfWriteBytes, OpDisp: DWORD;
     Buf: Pointer;
     Ret: Boolean;
+    Remain, Max, MaxInMB, BufferSize, BufferSizeInMB: UInt64;
+    Percentage: Double;
 begin
   Buf := nil;
   hSrc := INVALID_HANDLE_VALUE;
@@ -91,37 +92,47 @@ begin
 
   Synchronize(procedure
     begin
+      MaxInMB := StrToInt(MainForm.CopySizeEdit.Text);
+      Max := MaxInMB * MB;
+      Remain := Max;
+      BufferSizeInMB := StrToInt(MainForm.BufferSizeEdit.Text);
+      BufferSize := BufferSizeInMB * MB;
+
+      if Max mod BufferSize = 0 then
+        MainForm.ProgressBar1.Max := MaxInMB div BufferSizeInMB
+      else
+        MainForm.ProgressBar1.Max := (MaxInMB div BufferSizeInMB) + 1;
+
       MainForm.ProgressBar1.Min := 0;
-      Max := StrToInt(MainForm.CopySizeEdit.Text) div StrToInt(MainForm.BufferSizeEdit.Text);
-      MainForm.ProgressBar1.Max := Max + 1;
       MainForm.ProgressBar1.Position := 0;
       MainForm.ProgressBar1.Step := 1;
     end
   );
 
   try
-    hSrc := CreateFile(PChar(MainForm.SrcEdit.Text), GENERIC_READ,
-                       FILE_SHARE_READ or FILE_SHARE_WRITE or FILE_SHARE_DELETE,
-                       nil, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY or FILE_ATTRIBUTE_TEMPORARY, FILE_FLAG_SEQUENTIAL_SCAN);
+    hSrc := CreateFile(PChar(MainForm.SrcEdit.Text), GENERIC_READ, FILE_SHARE_READ, nil, OPEN_EXISTING,
+                       FILE_ATTRIBUTE_READONLY or FILE_ATTRIBUTE_TEMPORARY or FILE_FLAG_SEQUENTIAL_SCAN, 0);
     if hSrc = INVALID_HANDLE_VALUE then
       begin
         MessageBox(MainForm.Handle, PChar(SysErrorMessage(GetLastError)), PChar(MainForm.SrcEdit.Text), MB_OK or MB_ICONERROR);
         Exit;
       end;
 
-    hDest := CreateFile(PChar(MainForm.DestEdit.Text), GENERIC_WRITE,
-                        FILE_SHARE_READ or FILE_SHARE_WRITE or FILE_SHARE_DELETE,
-                        nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, FILE_FLAG_SEQUENTIAL_SCAN);
+    if String(MainForm.DestEdit.Text).StartsWith('\\.\') then
+      OpDisp := OPEN_EXISTING
+    else
+      OpDisp := CREATE_ALWAYS;
+    hDest := CreateFile(PChar(MainForm.DestEdit.Text), GENERIC_WRITE, FILE_SHARE_WRITE, nil, OpDisp,
+                        FILE_ATTRIBUTE_NORMAL or FILE_FLAG_SEQUENTIAL_SCAN, 0);
     if hDest = INVALID_HANDLE_VALUE then
       begin
         MessageBox(MainForm.Handle, PChar(SysErrorMessage(GetLastError)), PChar(MainForm.DestEdit.Text), MB_OK or MB_ICONERROR);
         Exit;
       end;
 
-    BufferSize := StrToInt(MainForm.BufferSizeEdit.Text) * MB;
     GetMem(Buf, BufferSize);
 
-    for Cnt := 0 to Max do
+    while Remain > 0 do
       begin
 
         if Terminated then Exit;
@@ -150,10 +161,12 @@ begin
             Exit;
           end;
 
+        Remain := Remain - NumOfReadBytes;
         Synchronize(procedure
           begin
             MainForm.ProgressBar1.StepIt;
-            MainForm.ProgressLabel.Caption := IntToStr(Trunc(Cnt / Max * 100.0)) + '%';
+            Percentage := 1.0 - (Remain / Max);
+            MainForm.ProgressLabel.Caption := IntToStr(Trunc(Percentage * 100.0)) + '%';
           end
         );
       end;
@@ -273,9 +286,8 @@ begin
   hSrc := INVALID_HANDLE_VALUE;
 
   try
-    hSrc := CreateFile(PChar(SrcPath), GENERIC_READ,
-                       FILE_SHARE_READ or FILE_SHARE_WRITE or FILE_SHARE_DELETE,
-                       nil, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY or FILE_ATTRIBUTE_TEMPORARY, FILE_FLAG_RANDOM_ACCESS);
+    hSrc := CreateFile(PChar(SrcPath), GENERIC_READ, FILE_SHARE_READ, nil, OPEN_EXISTING,
+                       FILE_ATTRIBUTE_READONLY or FILE_ATTRIBUTE_TEMPORARY or FILE_FLAG_SEQUENTIAL_SCAN, 0);
 
     if hSrc = INVALID_HANDLE_VALUE then
       begin
@@ -295,7 +307,7 @@ begin
             raise SetupError;
           end;
 
-        CopySize := (GetDriveSize(hSrc) div MB) + 1;
+        FileLength := GetDriveSize(hSrc);
       end
     else
       begin
@@ -306,11 +318,16 @@ begin
             SetupError.Caption := SrcPath;
             raise SetupError;
           end;
-
-        CopySize := (FileLength div MB) + 1;
       end;
 
-    CopySizeEdit.Text := IntToStr(CopySize);
+    if FileLength mod MB > 0 then
+      CopySize := (FileLength div MB) + 1
+    else
+      CopySize := FileLength div MB;
+
+    if not CopySizeCheck.Checked then
+      CopySizeEdit.Text := IntToStr(CopySize);
+
   finally
     if hSrc <> INVALID_HANDLE_VALUE then
       begin
