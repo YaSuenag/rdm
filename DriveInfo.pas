@@ -1,5 +1,5 @@
 {
-  Copyright (C) 2018  Yasumasa Suenaga
+  Copyright (C) 2018, 2022, Yasumasa Suenaga
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -32,6 +32,10 @@ type
     BytesPerSector: DWORD;
   end;
 
+  TGetLengthInformation = record
+    Length: LARGE_INTEGER;
+  end;
+
   function GetDriveSize(DriveHandle: THandle): UInt64;
   function GetDriveSectorSize(DriveHandle: THandle): Integer;
 
@@ -49,10 +53,15 @@ begin
 end;
 
 function GetDriveSize(DriveHandle: THandle): UInt64;
-var DiskGeom: TDiskGeometry;
+var info: TGetLengthInformation;
+    Ret: Boolean;
+    BytesReturned: DWORD;
 begin
-  DiskGeom := GetDiskGeometry(DriveHandle);
-  Result := DiskGeom.Cylinders * DiskGeom.TracksPerCylinder * DiskGeom.SectorsPerTrack * DiskGeom.BytesPerSector;
+  Ret := DeviceIoControl(DriveHandle, IOCTL_DISK_GET_LENGTH_INFO, nil, 0, @info, SizeOf(info), BytesReturned, nil);
+  if not Ret then
+    raise Exception.Create(SysErrorMessage(GetLastError));
+
+  Result := info.Length.QuadPart;
 end;
 
 function GetDriveSectorSize(DriveHandle: THandle): Integer;
